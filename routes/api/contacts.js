@@ -1,9 +1,9 @@
-const express = require('express')
+import express from "express";
 
-const router = express.Router()
+export const router = express.Router()
 
 router.get('/', async (req, res, next) => {
-  res.json({ message: 'template message' })
+  res.json({ message: 'homeWork done!' })
 })
 
 router.get('/:contactId', async (req, res, next) => {
@@ -22,4 +22,3 @@ router.put('/:contactId', async (req, res, next) => {
   res.json({ message: 'template message' })
 })
 
-module.exports = router
