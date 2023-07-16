@@ -52,6 +52,7 @@ async function updateContact(contactId, body) {
   if (index === -1) {
     return null;
   }
+  body.id = contactId;
   listOfContacts[index] = body;
   await updateContactList(listOfContacts);
   return listOfContacts[index];
