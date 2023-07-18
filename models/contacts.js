@@ -1,67 +1,108 @@
-import fs from "fs/promises";
-import { nanoid } from "nanoid";
-import path from "path";
+import { Schema, model } from "mongoose";
+import Joi from "joi";
 
-const contactsPath = path.resolve("models", "contacts.json");
+const contactSchema = Schema({
+  name: {
+    type: String,
+    required: [true, "Set name for contact"],
+  },
+  email: {
+    type: String,
+  },
+  phone: {
+    type: String,
+  },
+  favorite: {
+    type: Boolean,
+    default: false,
+  },
+});
 
-function updateContactList(listOfContacts) {
-  fs.writeFile(contactsPath, JSON.stringify(listOfContacts, null, 2));
-}
+export const Contact = model("contact", contactSchema);
 
-async function listContacts() {
-  const listOfContacts = await fs.readFile(contactsPath);
-  return JSON.parse(listOfContacts);
-}
+export const contactsAddSchema = Joi.object({
+  name: Joi.string().required().messages({
+    "any.required": `missing required name field`,
+  }),
+  email: Joi.string().required().messages({
+    "any.required": `missing required email field`,
+  }),
+  phone: Joi.string().required().messages({
+    "any.required": `missing required phone field`,
+  }),
+  favorite: Joi.boolean(),
+});
 
-async function getContactById(contactId) {
-  const listOfContacts = await listContacts();
-  const contact = listOfContacts.find((item) => item.id === contactId);
-  if (!contact) {
-    return null;
-  }
-  return contact;
-}
+export const updateFavoriteSchema = Joi.object({
+  favorite: Joi.boolean().required().messages({
+    "any.required": `missing field favorite`,
+  }),
+});
 
-async function removeContact(contactId) {
-  const listOfContacts = await listContacts();
-  const indexOf = listOfContacts.findIndex((item) => item.id === contactId);
-  if (indexOf === -1) {
-    return null;
-  }
-  const [result] = listOfContacts.splice(indexOf, 1);
-  await updateContactList(listOfContacts);
-  return result;
-}
+// import fs from "fs/promises";
+// import { nanoid } from "nanoid";
+// import path from "path";
 
-async function addContact({ name, email, phone }) {
-  const listOfContacts = await listContacts();
-  const newContact = {
-    id: nanoid(),
-    name,
-    email,
-    phone,
-  };
-  listOfContacts.push(newContact);
-  await updateContactList(listOfContacts);
-  return newContact;
-}
+// const contactsPath = path.resolve("models", "contacts.json");
 
-async function updateContact(contactId, body) {
-  const listOfContacts = await listContacts();
-  const index = listOfContacts.findIndex((item) => item.id === contactId);
-  if (index === -1) {
-    return null;
-  }
-  body.id = contactId;
-  listOfContacts[index] = body;
-  await updateContactList(listOfContacts);
-  return listOfContacts[index];
-}
+// function updateContactList(listOfContacts) {
+//   fs.writeFile(contactsPath, JSON.stringify(listOfContacts, null, 2));
+// }
 
-export default {
-  listContacts,
-  getContactById,
-  removeContact,
-  addContact,
-  updateContact,
-};
+// async function listContacts() {
+//   const listOfContacts = await fs.readFile(contactsPath);
+//   return JSON.parse(listOfContacts);
+// }
+
+// async function getContactById(contactId) {
+//   const listOfContacts = await listContacts();
+//   const contact = listOfContacts.find((item) => item.id === contactId);
+//   if (!contact) {
+//     return null;
+//   }
+//   return contact;
+// }
+
+// async function removeContact(contactId) {
+//   const listOfContacts = await listContacts();
+//   const indexOf = listOfContacts.findIndex((item) => item.id === contactId);
+//   if (indexOf === -1) {
+//     return null;
+//   }
+//   const [result] = listOfContacts.splice(indexOf, 1);
+//   await updateContactList(listOfContacts);
+//   return result;
+// }
+
+// async function addContact({ name, email, phone }) {
+//   const listOfContacts = await listContacts();
+//   const newContact = {
+//     id: nanoid(),
+//     name,
+//     email,
+//     phone,
+//   };
+//   listOfContacts.push(newContact);
+//   await updateContactList(listOfContacts);
+//   return newContact;
+// }
+
+// async function updateContact(contactId, body) {
+//   const listOfContacts = await listContacts();
+//   const index = listOfContacts.findIndex((item) => item.id === contactId);
+//   if (index === -1) {
+//     return null;
+//   }
+//   body.id = contactId;
+//   listOfContacts[index] = body;
+//   await updateContactList(listOfContacts);
+//   return listOfContacts[index];
+// }
+
+// export default {
+//   listContacts,
+//   getContactById,
+//   removeContact,
+//   addContact,
+//   updateContact,
+// };
