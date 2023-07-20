@@ -1,8 +1,10 @@
 import express from "express";
-import { Contact, contactsAddSchema } from "../models/contacts.js";
+import { Contact } from "../models/contacts.js";
 import HttpError from "../helpers/HttpError.js";
 import ctrlWrapper from "../decorators/ctrlWrapper.js";
 export const router = express.Router();
+
+const messageNotFound = "`Not found`";
 
 async function getAll(req, res) {
   const result = await Contact.find({});
@@ -13,7 +15,7 @@ async function getById(req, res) {
   const { contactId } = req.params;
   const result = await Contact.findById(contactId);
   if (!result) {
-    throw HttpError(404, `Not found`);
+    throw HttpError(404, messageNotFound);
   }
   res.json(result);
 }
@@ -30,17 +32,18 @@ async function updateById(req, res) {
     new: true,
   });
   if (!result) {
-    throw HttpError(404, `Contact with id=${contactId} not found`);
+    throw HttpError(404, messageNotFound);
   }
   res.json(result);
 }
+
 async function updateFavorite(req, res) {
   const { contactId } = req.params;
   const result = await Contact.findByIdAndUpdate(contactId, req.body, {
     new: true,
   });
   if (!result) {
-    throw HttpError(404, `Not found`);
+    throw HttpError(404, messageNotFound);
   }
   res.json(result);
 }
@@ -49,7 +52,7 @@ async function deleteById(req, res) {
   const { contactId } = req.params;
   const result = await Contact.findByIdAndRemove(contactId);
   if (!result) {
-    throw HttpError(404, `Contact with id=${contactId} not found`);
+    throw HttpError(404, messageNotFound);
   }
 
   res.json({
