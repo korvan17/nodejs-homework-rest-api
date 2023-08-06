@@ -1,5 +1,6 @@
 import { Schema, model } from "mongoose";
 import Joi from "joi";
+import { handleSaveError, validateAtUpdate } from "./hooks.js";
 
 const contactSchema = Schema(
   {
@@ -20,10 +21,16 @@ const contactSchema = Schema(
     owner: {
       type: Schema.Types.ObjectId,
       ref: "user",
+      required: true,
     },
   },
   { versionKey: false }
 );
+
+contactSchema.pre("findOneAndUpdate", validateAtUpdate);
+
+contactSchema.post("save", handleSaveError);
+contactSchema.post("findOneAndUpdate", handleSaveError);
 
 export const Contact = model("contact", contactSchema);
 

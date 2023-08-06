@@ -7,7 +7,13 @@ export const router = express.Router();
 const messageNotFound = "`Not found`";
 
 async function getAll(req, res) {
-  const result = await Contact.find({});
+  const { _id: owner } = req.user;
+  const { page = 1, limit = 10 } = reg.query;
+  const skip = (page - 1) * limit;
+  const result = await Contact.find({ owner }, "", { skip, limit }).populate(
+    "owner",
+    "email subscription"
+  );
   res.json(result);
 }
 
@@ -21,8 +27,8 @@ async function getById(req, res) {
 }
 
 async function add(req, res) {
-  console.log(req.body);
-  const result = await Contact.create(req.body);
+  console.log(req.user);
+  const result = await Contact.create({ ...req.body, owner: req.user._id });
   res.status(201).json(result);
 }
 

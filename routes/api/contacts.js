@@ -6,8 +6,11 @@ import {
   contactsAddSchema,
   updateFavoriteSchema,
 } from "../../models/contacts.js";
+import authenticate from "../../middlewars/authenticate.js";
 
 export const router = express.Router();
+
+router.use(authenticate);
 
 router.get("/", contactsController.getAll);
 
