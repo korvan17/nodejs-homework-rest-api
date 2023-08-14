@@ -1,11 +1,18 @@
 import bcrypt from "bcryptjs";
+import path from "path";
+import fs from "fs/promises";
 import jwt from "jsonwebtoken";
+import Jimp from "jimp";
+import gravatar from "gravatar";
 import ctrlWrapper from "../decorators/ctrlWrapper.js";
 import HttpError from "../helpers/HttpError.js";
 import { User } from "../models/users.js";
 import "dotenv/config";
 
 const { JWT_SECRET } = process.env;
+
+const avatarsPath = path.resolve("public", "avatars");
+const pattern = /(.?)@(.?).(.*)/g;
 
 async function registration(req, res) {
   const { email, password } = req.body;
@@ -16,7 +23,13 @@ async function registration(req, res) {
 
   const hashPassword = await bcrypt.hash(password, 10);
 
-  const newUser = await User.create({ ...req.body, password: hashPassword });
+  const avatarURL = gravatar.url(email);
+
+  const newUser = await User.create({
+    ...req.body,
+    password: hashPassword,
+    avatarURL,
+  });
 
   res.status(201).json({
     user: { email: newUser.email, subscription: "starter" },
@@ -66,9 +79,31 @@ async function logout(req, res) {
   res.sendStatus(204);
 }
 
+async function updateAvatar(req, res) {
+  const { _id, email } = req.user;
+  const camelCaseEmail = email
+    .replace(/\b(\w)/g, (m) => m.toUpperCase())
+    .replace(/[@.]/g, "");
+  let { path: oldPath, filename } = req.file;
+  filename = `${camelCaseEmail}_${filename}`;
+  const newPath = path.resolve(avatarsPath, filename);
+
+  const resizedAvatar = await Jimp.read(oldPath);
+  resizedAvatar.cover(250, 250);
+  resizedAvatar.writeAsync(oldPath);
+
+  await fs.rename(oldPath, newPath);
+  const avatarURL = path.sep + path.join("avatars", filename);
+  await User.findByIdAndUpdate(_id, { avatarURL });
+
+  res.json({ avatarURL });
+  fs.unlink(oldPath);
+}
+
 export default {
   registration: ctrlWrapper(registration),
   login: ctrlWrapper(login),
   getCurrent: ctrlWrapper(getCurrent),
   logout: ctrlWrapper(logout),
+  updateAvatar: ctrlWrapper(updateAvatar),
 };

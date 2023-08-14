@@ -7,6 +7,7 @@ import {
   updateFavoriteSchema,
 } from "../../models/contacts.js";
 import authenticate from "../../middlewars/authenticate.js";
+import upload from "../../middlewars/upload.js";
 
 export const router = express.Router();
 
@@ -18,6 +19,7 @@ router.get("/:contactId", contactsController.getById);
 
 router.post(
   "/",
+  upload.single("avatar"),
   isEmptyBody,
   validateBody(contactsAddSchema),
   contactsController.add
