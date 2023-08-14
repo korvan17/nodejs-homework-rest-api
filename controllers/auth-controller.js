@@ -8,8 +8,10 @@ import ctrlWrapper from "../decorators/ctrlWrapper.js";
 import HttpError from "../helpers/HttpError.js";
 import { User } from "../models/users.js";
 import "dotenv/config";
+import sendEmail from "../helpers/emailSend.js";
+import { nanoid } from "nanoid";
 
-const { JWT_SECRET } = process.env;
+const { JWT_SECRET, BASE_URL } = process.env;
 
 const avatarsPath = path.resolve("public", "avatars");
 const pattern = /(.?)@(.?).(.*)/g;
@@ -20,16 +22,18 @@ async function registration(req, res) {
   if (user) {
     throw HttpError(409, "Email in use");
   }
-
   const hashPassword = await bcrypt.hash(password, 10);
 
   const avatarURL = gravatar.url(email);
-
+  const verificationToken = nanoid();
   const newUser = await User.create({
     ...req.body,
     password: hashPassword,
     avatarURL,
+    verificationToken,
   });
+
+  await sendEmail(email, verificationToken);
 
   res.status(201).json({
     user: { email: newUser.email, subscription: "starter" },
@@ -99,6 +103,37 @@ async function updateAvatar(req, res) {
   res.json({ avatarURL });
   fs.unlink(oldPath);
 }
+async function verification(req, res) {
+  const { verificationToken } = req.params;
+  const user = await User.findOne({ verificationToken });
+  if (!user) {
+    throw HttpError(404, "User not found");
+  }
+
+  await User.findByIdAndUpdate(user._id, {
+    ...user,
+    verify: true,
+    verificationToken: "",
+  });
+
+  res.json({ message: "Verification successful" });
+}
+
+async function resendVerification(req, res) {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw HttpError(404, "User not found");
+  }
+  if (user.verify) {
+    throw HttpError(400, "Verification has already been passed");
+  }
+
+  await sendEmail(email, user.verificationToken);
+  res.json({
+    message: "Verification email sent",
+  });
+}
 
 export default {
   registration: ctrlWrapper(registration),
@@ -106,4 +141,6 @@ export default {
   getCurrent: ctrlWrapper(getCurrent),
   logout: ctrlWrapper(logout),
   updateAvatar: ctrlWrapper(updateAvatar),
+  verification: ctrlWrapper(verification),
+  resendVerification: ctrlWrapper(resendVerification),
 };
