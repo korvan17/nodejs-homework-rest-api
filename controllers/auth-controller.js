@@ -14,7 +14,6 @@ import { nanoid } from "nanoid";
 const { JWT_SECRET, BASE_URL } = process.env;
 
 const avatarsPath = path.resolve("public", "avatars");
-const pattern = /(.?)@(.?).(.*)/g;
 
 async function registration(req, res) {
   const { email, password } = req.body;
@@ -50,6 +49,10 @@ async function login(req, res) {
   const passwordCompare = await bcrypt.compare(password, user.password);
   if (!passwordCompare) {
     throw HttpError(401, "Email or password invalid");
+  }
+
+  if (!user.verify) {
+    throw HttpError(401, "User not verify");
   }
 
   const payload = {
@@ -111,9 +114,8 @@ async function verification(req, res) {
   }
 
   await User.findByIdAndUpdate(user._id, {
-    ...user,
     verify: true,
-    verificationToken: "",
+    verificationToken: null,
   });
 
   res.json({ message: "Verification successful" });
