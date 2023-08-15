@@ -80,20 +80,17 @@ async function logout(req, res) {
 }
 
 async function updateAvatar(req, res) {
-  const { _id, email } = req.user;
-  const camelCaseEmail = email
-    .replace(/\b(\w)/g, (m) => m.toUpperCase())
-    .replace(/[@.]/g, "");
-  let { path: oldPath, filename } = req.file;
-  filename = `${camelCaseEmail}_${filename}`;
-  const newPath = path.resolve(avatarsPath, filename);
+  const { _id } = req.user;
+  const { path: oldPath, filename } = req.file;
+  const newFilename = `${_id}_${filename}`;
+  const newPath = path.resolve(avatarsPath, newFilename);
 
   const resizedAvatar = await Jimp.read(oldPath);
   resizedAvatar.cover(250, 250);
   resizedAvatar.writeAsync(oldPath);
 
   await fs.rename(oldPath, newPath);
-  const avatarURL = path.sep + path.join("avatars", filename);
+  const avatarURL = path.sep + path.join("avatars", newFilename);
   await User.findByIdAndUpdate(_id, { avatarURL });
 
   res.json({ avatarURL });
