@@ -94,11 +94,6 @@ async function updateAvatar(req, res) {
   await User.findByIdAndUpdate(_id, { avatarURL });
 
   res.json({ avatarURL });
-  try {
-    fs.unlink(oldPath);
-  } catch (error) {
-    console.log("error remove file - ", error);
-  }
 }
 
 export default {
